@@ -1,0 +1,10 @@
+camera_index: 1
+camera_auto: true
+camera_probe_max: 6
+board_orientation: white
+change_threshold: 12.0
+warp_size: 800
+loop_sleep_ms: 30
+auto_start: true
+debug: false
+move_post_url:
