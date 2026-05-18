@@ -43,6 +43,12 @@ def start() -> dict[str, object]:
     return {"started": started, **runtime.state()}
 
 
+@app.post("/capture-baseline")
+def capture_baseline() -> dict[str, object]:
+    ok = runtime.on_capture_baseline()
+    return {"captured": ok, **runtime.state()}
+
+
 @app.post("/stop")
 def stop() -> dict[str, object]:
     stopped = runtime.stop()

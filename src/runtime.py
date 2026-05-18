@@ -18,6 +18,7 @@ from src.utils.config_loader import ServiceConfig
 
 
 class RunState(Enum):
+    WAITING_TO_CAPTURE_BASELINE = "waiting_to_capture_baseline"
     WAITING_FOR_ROBOT = "waiting_for_robot"
     HUMAN_TURN = "human_turn"
     CAPTURE_MOVE = "capture_move"
@@ -34,8 +35,9 @@ class VisionRuntime:
         self._last_move: str | None = None
         self._calibrated = False
         self._camera_index: int | None = None
-        self._state: RunState = RunState.WAITING_FOR_ROBOT
+        self._state: RunState = RunState.WAITING_TO_CAPTURE_BASELINE
         self._baseline_warp: object | None = None
+        self._current_warp: object | None = None
 
     def start(self) -> bool:
         with self._lock:
@@ -101,17 +103,19 @@ class VisionRuntime:
                         continue
                     self._calibrated = True
                     self.logger.info("Board calibration succeeded.")
-                    warped = warp_frame(frame, calibration)
-                    self._baseline_warp = to_gray_blur(warped)
+                    self.logger.info("Waiting for baseline capture. Call POST /capture-baseline after placing pieces.")
                     continue
 
                 warped = warp_frame(frame, calibration)
                 processed = to_gray_blur(warped)
-
+                
                 with self._lock:
+                    self._current_warp = processed
                     state = self._state
 
-                if state == RunState.HUMAN_TURN:
+                if state == RunState.WAITING_TO_CAPTURE_BASELINE:
+                    time.sleep(0.05)
+                elif state == RunState.HUMAN_TURN:
                     if self._baseline_warp is None:
                         self._baseline_warp = processed
                         print("Human turn: press SPACE when the move is complete.")
@@ -163,15 +167,29 @@ class VisionRuntime:
         print("Received human move signal — capturing move...")
         return True
 
+    def on_capture_baseline(self) -> bool:
+        with self._lock:
+            if self._state != RunState.WAITING_TO_CAPTURE_BASELINE:
+                self.logger.info("on_capture_baseline ignored; state=%s", self._state)
+                return False
+            if self._current_warp is None:
+                self.logger.info("on_capture_baseline ignored; current frame not ready yet")
+                return False
+            self._baseline_warp = self._current_warp
+            self._state = RunState.HUMAN_TURN
+        self.logger.info("Baseline captured. Ready for human moves.")
+        print("Baseline captured with pieces. Make your first move and call POST /human-done when complete.")
+        return True
+
     def on_robot_done(self) -> bool:
         with self._lock:
             if self._state not in {RunState.WAITING_FOR_ROBOT, RunState.HUMAN_TURN}:
                 self.logger.info("on_robot_done ignored; state=%s", self._state)
                 return False
             self._state = RunState.HUMAN_TURN
-            self._baseline_warp = None
-        self.logger.info("Robot finished; returning to HUMAN_TURN")
-        print("Robot finished — human turn started. Press SPACE after the move.")
+            self._baseline_warp = self._current_warp
+        self.logger.info("Robot finished; returning to HUMAN_TURN with updated baseline")
+        print("Robot finished — human turn started. Make your next move and call POST /human-done when complete.")
         return True
 
     def _post_move(self, move: str) -> None:
