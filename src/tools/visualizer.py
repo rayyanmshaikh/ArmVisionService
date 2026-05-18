@@ -38,6 +38,19 @@ def draw_calibration_overlay(frame: np.ndarray, calibration) -> np.ndarray:
     return output
 
 
+def draw_cell_notations(warped: np.ndarray, cells: list) -> np.ndarray:
+    """Draw small position labels inside every board square."""
+    output = warped.copy()
+
+    for cell in cells:
+        label = cell.name
+        anchor = (cell.x0 + 4, cell.y1 - 6)
+        cv.putText(output, label, anchor, cv.FONT_HERSHEY_SIMPLEX, 0.32, (0, 0, 0), 2, cv.LINE_AA)
+        cv.putText(output, label, anchor, cv.FONT_HERSHEY_SIMPLEX, 0.32, (255, 255, 255), 1, cv.LINE_AA)
+
+    return output
+
+
 def draw_changed_squares(warped: np.ndarray, before_gray: np.ndarray, after_gray: np.ndarray, cells: list, threshold: float = 10.0) -> np.ndarray:
     """Highlight squares that changed significantly."""
     output = warped.copy()
@@ -140,6 +153,8 @@ def run_visualizer(
                     warped_with_overlay, _ = draw_changed_squares(warped, previous_warp_gray, warped_gray, cells, threshold=threshold)
                 else:
                     warped_with_overlay = warped.copy()
+
+                warped_with_overlay = draw_cell_notations(warped_with_overlay, cells)
 
                 previous_warp_gray = warped_gray
 

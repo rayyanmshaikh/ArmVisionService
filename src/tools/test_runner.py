@@ -9,7 +9,7 @@ from src.board.grid_mapper import build_cell_regions
 from src.board.move_detector import MoveDetector
 from src.camera.camera_stream import CameraStream
 from src.camera.frame_processor import to_gray_blur
-from src.tools.visualizer import draw_calibration_overlay
+from src.tools.visualizer import draw_calibration_overlay, draw_cell_notations
 from src.utils.config_loader import ServiceConfig
 
 
@@ -45,7 +45,7 @@ def run_test_mode(config: ServiceConfig) -> None:
             if calibration is None:
                 calibration = calibrate_from_frame(frame, board_size=config.warp_size)
                 if calibration is not None:
-                    print("✓ Board calibration succeeded")
+                    print("Board calibration succeeded")
                     print("Place pieces for the first human turn, then press SPACE to capture a baseline image.")
 
             frame_with_calib = draw_calibration_overlay(frame, calibration)
@@ -53,6 +53,7 @@ def run_test_mode(config: ServiceConfig) -> None:
             if calibration is not None:
                 warped = warp_frame(frame, calibration)
                 current_warp_gray = to_gray_blur(warped)
+                warped = draw_cell_notations(warped, cells)
 
                 status_text = "CALIBRATED | HUMAN TURN" if baseline_gray is not None else "CALIBRATED | PLACE PIECES (press SPACE to capture baseline)"
                 cv.putText(
