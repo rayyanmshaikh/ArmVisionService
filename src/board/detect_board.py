@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import cv2 as cv
 import numpy as np
+from src.camera.frame_processor import to_grayscale
 
 
 @dataclass(slots=True)
@@ -46,7 +47,7 @@ def _estimate_outer_corners(internal: np.ndarray) -> np.ndarray:
 
 
 def calibrate_from_frame(frame: np.ndarray, board_size: int = 800) -> BoardCalibration | None:
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY) if len(frame.shape) == 3 else frame
+    gray = to_grayscale(frame, use_clahe=True) if len(frame.shape) == 3 else frame
     internal = _find_internal_corners(gray)
     if internal is None:
         return None

@@ -1,10 +1,37 @@
 from __future__ import annotations
 
 import cv2 as cv
+from typing import Tuple
 
 
-def to_gray_blur(frame: cv.typing.MatLike, blur_kernel: int = 5) -> cv.typing.MatLike:
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY) if len(frame.shape) == 3 else frame
+def apply_clahe_lab(image: cv.typing.MatLike, clip_limit: float = 2.0, tile_grid_size: Tuple[int, int] = (8, 8)) -> cv.typing.MatLike:
+    """Enhance contrast using CLAHE on the L channel in LAB color space.
+
+    Returns a BGR image with the enhanced L channel.
+    """
+    if len(image.shape) != 3:
+        return image
+
+    lab = cv.cvtColor(image, cv.COLOR_BGR2LAB)
+    l, a, b = cv.split(lab)
+    clahe = cv.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
+    l_enh = clahe.apply(l)
+    lab_enh = cv.merge((l_enh, a, b))
+    return cv.cvtColor(lab_enh, cv.COLOR_LAB2BGR)
+
+
+def to_grayscale(frame: cv.typing.MatLike, use_clahe: bool = False, clahe_clip: float = 2.0, tile_grid_size: Tuple[int, int] = (8, 8)) -> cv.typing.MatLike:
+    """Convert an image to grayscale, optionally applying LAB+CLAHE first."""
+    if len(frame.shape) == 3:
+        img = frame
+        if use_clahe:
+            img = apply_clahe_lab(img, clip_limit=clahe_clip, tile_grid_size=tile_grid_size)
+        return cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    return frame
+
+
+def to_gray_blur(frame: cv.typing.MatLike, blur_kernel: int = 5, use_clahe: bool = False) -> cv.typing.MatLike:
+    gray = to_grayscale(frame, use_clahe=use_clahe)
     kernel = max(3, blur_kernel)
     if kernel % 2 == 0:
         kernel += 1

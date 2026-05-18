@@ -7,6 +7,7 @@ import numpy as np
 
 from src.board.grid_mapper import CellRegion
 from src.camera.frame_processor import center_crop
+from src.camera.frame_processor import to_grayscale
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,7 +32,7 @@ class MoveDetector:
 
     @staticmethod
     def _to_gray(image: np.ndarray) -> np.ndarray:
-        return cv.cvtColor(image, cv.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
+        return to_grayscale(image, use_clahe=True) if len(image.shape) == 3 else image
 
     @staticmethod
     def _occupancy_score(cell: np.ndarray) -> float:

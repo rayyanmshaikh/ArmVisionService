@@ -11,6 +11,7 @@ import numpy as np
 from src.board.detect_board import calibrate_from_frame, warp_frame
 from src.board.grid_mapper import build_cell_regions
 from src.board.move_detector import MoveDetector
+from src.camera.frame_processor import to_grayscale
 
 
 def load_images(dirpath: Path) -> List[Tuple[Path, np.ndarray]]:
@@ -41,7 +42,7 @@ def find_calibration(images: List[Tuple[Path, np.ndarray]], calib_name: str | No
 
 
 def grayscale_if_needed(img: np.ndarray) -> np.ndarray:
-    return cv.cvtColor(img, cv.COLOR_BGR2GRAY) if len(img.shape) == 3 else img
+    return to_grayscale(img, use_clahe=True) if len(img.shape) == 3 else img
 
 
 def analyze(dirpath: Path, calib_name: str | None, outdir: Path, diff_threshold: float = 10.0) -> None:
