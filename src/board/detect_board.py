@@ -47,7 +47,7 @@ def _estimate_outer_corners(internal: np.ndarray) -> np.ndarray:
 
 
 def calibrate_from_frame(frame: np.ndarray, board_size: int = 800) -> BoardCalibration | None:
-    gray = to_grayscale(frame, use_clahe=True) if len(frame.shape) == 3 else frame
+    gray = to_grayscale(frame, use_clahe=False) if len(frame.shape) == 3 else frame
     internal = _find_internal_corners(gray)
     if internal is None:
         return None
