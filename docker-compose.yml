@@ -1,0 +1,18 @@
+services:
+  vision-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: arm-vision-service:latest
+    container_name: arm-vision-service
+    ports:
+      - "8000:8000"
+    environment:
+      CAMERA_AUTO: "true"
+      CAMERA_INDEX: "AUTO"
+      THRESHOLD: "10.0"
+      BOARD_ORIENTATION: "white"
+      AUTO_START: "true"
+      DEBUG: "false"
+    restart: unless-stopped
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
